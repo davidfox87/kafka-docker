@@ -1,0 +1,32 @@
+version: "3"
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+
+  broker:
+    container_name: broker
+    image: wurstmeister/kafka
+    ports:
+      - "9094:9092"
+    environment:
+      KAFKA_BROKER_ID: 1 # in a cluster, multiple brokers work on different nodes, this is the identifier.
+      KAFKA_ADVERTISED_HOST_NAME: broker
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092
+      KAFKA_CREATE_TOPICS: "topic-test:1:1" # 1 partition and 1 replica for the topic
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 # service name and port - tells the broker where it can find the zookeeper
+      KAFKA_MESSAGE_MAX_BYTES: 2000000 # this might be important!?
+      KAFKA_LOG_DIRS: /kafka/logs
+      #KAFKA_offsets_topic_replication_factor: 1 
+    volumes:
+      - ./kafka-data/1:/kafka
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper
+
+networks:
+  default:
+    external:
+      name: kafka-network
